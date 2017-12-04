@@ -20,15 +20,32 @@ class App extends React.Component {
     }
 
     componentWillMount () {
-        this.ref = base.syncState(`${this.props.params.storeID}/fishes`,
+        // this runs right begore the app is rendered
+        //sync with firebase
+        this.ref = base.syncState(`${this.props.params.storeId}/fishes`,
             {
                context: this,
                state: 'fishes'
             });
+
+        //check if there is any order in local storage
+        const localStorageRef = localStorage.getItem(`order-${this.props.params.storeId}`);
+            console.log(localStorageRef);
+        if(localStorageRef) {
+            //update our App component's order state
+            this.setState({
+                order: JSON.parse(localStorageRef)
+            });
+        }
     }
 
     componentWillUnmount() {
         base.removeBinding(this.ref);
+    }
+
+    componentWillUpdate(nextProps, nextState) {
+        localStorage.setItem(`order-${this.props.params.storeId}`, 
+            JSON.stringify(nextState.order));
     }
 
     addFish(fish) {
@@ -37,7 +54,7 @@ class App extends React.Component {
             const fishes = {...this.state.fishes};
             // add in new fish
            const timestamp = Date.now();
-           fishes [`fish-${timestamp}`] = fish;
+           fishes[`fish-${timestamp}`] = fish;
         //set state
             this.setState({ fishes });
     }
@@ -71,7 +88,11 @@ class App extends React.Component {
                         }                       
                     </ul>
                 </div>
-                <Order fishes={this.state.fishes} order={this.state.order}/>
+                <Order
+                    fishes={this.state.fishes} 
+                    order={this.state.order}
+                    params={this.props.params}
+                />
                 <Inventory addFish={this.addFish} loadSamples={this.loadSamples} />
             </div>
         )
